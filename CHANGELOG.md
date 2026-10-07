@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0 — 2026-10-07
+
+- `N`, `C` and `M` sort directly by name, CPU or memory (command, CPU or
+  memory in the process view); `s` still cycles.
+
 ## 1.0.0 — 2026-10-07
 
 First release.

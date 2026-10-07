@@ -799,6 +799,18 @@ func (a *app) rune(r rune) (quit bool) {
 			a.sortBy = (a.sortBy + 1) % len(sortNames)
 			a.rebuild()
 		}
+	case 'N', 'C', 'M':
+		name := map[rune]string{'N': "NAME", 'C': "CPU", 'M': "MEM"}[r]
+		if a.view == viewProcs {
+			if name == "NAME" {
+				name = "COMMAND"
+			}
+			a.psortBy = indexOf(psortNames, name)
+			a.rebuildProcs()
+		} else {
+			a.sortBy = indexOf(sortNames, name)
+			a.rebuild()
+		}
 	case 't':
 		if a.view == viewProcs {
 			a.ptree = !a.ptree
@@ -1388,7 +1400,7 @@ func (a *app) drawHelp() {
 		"",
 		"Keys",
 		"  Up/Down PgUp/PgDn Home/End  move     Enter  processes     d  details (e: environment)     l  logs (Left/Right scroll)",
-		"  /  search     s  sort     t  tree     a  show stopped containers     c  command line     h  help     q  quit / back",
+		"  /  search     s  cycle sort     N/C/M  sort by name/CPU/memory     t  tree     a  show stopped containers     c  command line     h  help     q  quit / back",
 		"",
 		"Settings (sorts, trees, a, c, refresh) are saved to " + configPath() + " on exit.",
 		"Needs access to the Docker socket (docker group or root). Signalling processes and container user names need root.",

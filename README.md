@@ -21,7 +21,7 @@ pids limit, I/O rates and uptime.
 ports, mounts, labels; environment hidden until you press `e`) and `l` follows
 the logs. Actions, each confirmed first: stop/start (`x`), restart (`r`),
 pause/unpause (`p`) and send a signal (`k`), to the container or, in the
-process view, to the selected process. Search (`/`), sort (`s`), show stopped
+process view, to the selected process. Search (`/`), sort (`s` to cycle, `N`/`C`/`M` for name, CPU, memory), show stopped
 (`a`), command line (`c`), help (`h`). Settings persist in
 `~/.config/dockertop/config`. See `man dockertop`.
 

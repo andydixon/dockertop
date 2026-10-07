@@ -1,0 +1,331 @@
+.\" Manual page for dockertop. View with: man -l docs/dockertop.1
+.TH DOCKERTOP 1 "October 2026" "dockertop 1.0.0" "User Commands"
+.SH NAME
+dockertop \- htop\-style view of Docker containers and the processes inside them
+.SH SYNOPSIS
+.B dockertop
+[\fB\-d\fR \fISECONDS\fR] [\fB\-s\fR \fICOLUMN\fR] [\fB\-t\fR] [\fB\-r\fR] [\fICONTAINER\fR]
+.br
+.B dockertop
+\fB\-\-version\fR
+.SH DESCRIPTION
+.B dockertop
+is a full\-screen terminal monitor, laid out like
+.BR htop (1),
+for Docker. The main screen lists every container with its CPU, memory,
+network and block I/O usage, process count and status. Selecting a container
+and pressing \fBEnter\fR opens an htop\-like view of the processes running
+inside it.
+.PP
+It talks to the Docker Engine API directly over the daemon socket, so the
+.BR docker (1)
+command line is not needed. Container figures come from the same statistics
+as
+.BR "docker stats" .
+Process figures are read from
+.IR /proc
+on the host, using the host PIDs that the daemon reports.
+.PP
+Lifecycle actions (stop, start, restart, pause, signal) are bound to single
+letter keys and always ask for confirmation first.
+.SH OPTIONS
+Every option overrides the value loaded from the configuration file.
+.TP
+.BI \-d " SECONDS"
+Refresh interval. Fractions are allowed. Default 2.
+.TP
+.BI \-s " COLUMN"
+Sort column of the container list, one of
+.BR CPU ,
+.BR MEM ,
+.BR NET ,
+.BR IO ,
+.BR PIDS ,
+.BR NAME ,
+.BR IMAGE ,
+.BR STATE .
+Default \fBCPU\fR.
+.TP
+.B \-t
+Start in tree view, containers grouped by compose project.
+.TP
+.B \-r
+Show running containers only. By default stopped ones are listed too.
+.TP
+.I CONTAINER
+A container name or ID prefix. dockertop opens straight into that
+container's process view.
+.TP
+.B \-\-version
+Print the version and exit.
+.TP
+.B \-h
+Print a short usage message and exit.
+.SH DISPLAY
+.SS Header
+.TP
+.B CPU
+CPU used by all containers together, out of every core on the host.
+.TP
+.B Mem
+Memory used by all containers together, out of the host's RAM.
+.TP
+Containers
+How many containers are running, paused, stopped or restarting, then the
+Docker version, host name, operating system and cgroup version.
+.TP
+Net, Block
+Network traffic and block I/O per second, summed over every container, and
+the current sort order.
+.SS Columns
+.TP
+.B NAME
+Container name. In tree view, containers are indented under a summary row
+for their compose project.
+.TP
+.B CPU%
+CPU time per second of wall time, as a percentage of one core: 100 is one
+full core, as in
+.B htop
+and
+.BR "docker stats" .
+Shown as \fB\-\fR until two samples have been taken.
+.TP
+.B MEM
+Memory charged to the container's cgroup, minus inactive page cache, the
+same figure
+.B docker stats
+shows.
+.TP
+.B MEM%
+\fBMEM\fR as a share of the container's memory limit, or of host RAM when
+it has none. Yellow from 50%, red from 90%.
+.TP
+.BR "NET RX" ", " "NET TX"
+Bytes received and sent per second, over all of the container's networks.
+.TP
+.BR READ ", " WRITE
+Block device bytes read and written per second.
+.TP
+.B PIDS
+Number of tasks (processes and threads) in the container.
+.TP
+.B STATUS
+Docker's status text. Red for unhealthy, dead or a non\-zero exit,
+yellow for paused or a health check still starting, grey for stopped.
+.TP
+.B IMAGE
+Image name, or the command after pressing \fBc\fR.
+.SS Process view
+.B Enter
+on a container shows the processes in it, like
+.BR htop .
+The header has the container's CPU against its limit (or all cores), memory
+against its limit, task, thread and running counts, the pids limit, network
+and block I/O rates and uptime. The columns are:
+.TP
+.B PID
+Process ID on the host (not inside the container's PID namespace).
+.TP
+.B USER
+User name from the container's own
+.IR /etc/passwd ,
+read through
+.IR /proc/PID/root .
+That needs root; otherwise UID 0 shows as \fBroot\fR and other users by
+number, because host user names would be wrong for container UIDs.
+.TP
+.BR PRI ", " NI
+Kernel priority and nice value.
+.TP
+.BR VIRT ", " RES
+Virtual size and resident memory.
+.TP
+.B S
+State: R running, S sleeping, D uninterruptible (red), Z zombie, T stopped.
+.TP
+.B CPU%
+Share of one core over the last refresh.
+.TP
+.B MEM%
+Resident memory as a share of the container's memory limit.
+.TP
+.B TIME+
+User plus system CPU time used.
+.TP
+.B Command
+Process name, or the full command line after pressing \fBc\fR. Indented
+under its parent in tree view.
+.SS Details and logs
+.B d
+shows the container's configuration: image, command, user, state, health
+and the last health check, limits, current usage and totals since start,
+networks and published ports, mounts and labels. Environment variables are
+hidden, since they often hold secrets; \fBe\fR shows them.
+.PP
+.B l
+shows the last 2000 lines of the container's log, stdout and stderr,
+refreshed every interval and following the end. Scrolling up stops
+following; \fBEnd\fR resumes. Colour escapes are stripped.
+.SH KEYS
+.TP
+.B Up, Down, PgUp, PgDn, Home, End
+Move the selection, or scroll details and logs.
+.TP
+.B Left, Right
+Pan long lines in details and logs.
+.TP
+.B Enter
+Process view of the selected container.
+.TP
+.B Esc, q
+Back to the previous screen. \fBq\fR on the container list quits.
+.TP
+.B h, ?
+Help.
+.TP
+.B /
+Incremental search: over name, ID, image, compose project and status in
+the list; over command line, name, user and PID in the process view.
+\fBEnter\fR keeps the filter, \fBEsc\fR clears it.
+.TP
+.B s
+Cycle the sort column. The process view sorts by
+.BR CPU ,
+.BR MEM ,
+.BR TIME ,
+.BR PID ,
+.B USER
+or
+.BR COMMAND .
+.TP
+.B t
+Toggle tree view: compose projects in the list, the process tree in the
+process view.
+.TP
+.B a
+Toggle showing stopped containers.
+.TP
+.B c
+Toggle image or command in the list, process name or full command line in
+the process view.
+.TP
+.B d
+Details of the selected container.
+.TP
+.B l
+Logs of the selected container.
+.TP
+.B e
+Show or hide environment variables in the details view.
+.TP
+.B Ctrl\-C
+Quit at once.
+.SH ACTIONS
+Each action asks for confirmation before doing anything. In the process
+view, container actions apply to the container being viewed. Summary rows
+of compose projects take no actions.
+.TP
+.B x \(em stop or start
+Stops a running or paused container (SIGTERM, then SIGKILL once the
+container's stop timeout, 10 seconds by default, has passed), or starts a
+stopped one.
+.TP
+.B r \(em restart
+Stops and starts the container.
+.TP
+.B p \(em pause
+Freezes every process in the container with the cgroup freezer, or thaws a
+paused one.
+.TP
+.B k \(em signal
+Opens a picker of common signals (TERM, KILL, INT, HUP, QUIT, USR1, USR2,
+STOP, CONT). In the list the signal goes to the container's main process
+through the daemon. In the process view it goes to the selected process
+directly, with
+.BR kill (2),
+which needs permission over that process: usually root.
+.SH PERMISSIONS
+dockertop needs the Docker socket, so its user must be root or in the
+\fBdocker\fR group. Membership of that group is equivalent to root on the
+host.
+.PP
+Everything else works without root, except the container's own user names
+and signalling processes in the process view.
+.SH ENVIRONMENT
+.TP
+.B DOCKER_HOST
+Daemon address, \fBunix://\fR\fIPATH\fR (default
+\fIunix:///var/run/docker.sock\fR) or \fBtcp://\fR\fIHOST\fR:\fIPORT\fR.
+TLS is not supported: when \fBDOCKER_TLS_VERIFY\fR is set dockertop refuses
+to start. Forward the socket over
+.BR ssh (1)
+instead. Docker contexts are not read; set \fBDOCKER_HOST\fR.
+.PP
+With a remote daemon the container list works as usual, but the host PIDs
+are not in the local
+.IR /proc .
+The process view then shows the daemon's own
+.B ps
+output, in which CPU% is a lifetime average, and processes cannot be
+signalled.
+.TP
+.B XDG_CONFIG_HOME
+Where the configuration lives, see
+.BR FILES .
+.SH CONFIGURATION
+Settings are read from the file below at start\-up and written back when
+.B dockertop
+exits, so the sort orders, tree views, stopped\-container filter,
+command\-line display and refresh interval persist between runs. The file
+holds one
+.I key = value
+per line and may be edited by hand:
+.PP
+.nf
+    sort = CPU           # container list, see \-s
+    proc_sort = CPU      # process view
+    all = true           # false lists running containers only
+    tree = false         # group by compose project
+    proc_tree = false    # process tree
+    full_cmd = false
+    refresh = 2          # seconds
+.fi
+.SH FILES
+.TP
+.I $XDG_CONFIG_HOME/dockertop/config
+Configuration, normally
+.IR ~/.config/dockertop/config .
+When run under
+.BR sudo (8)
+this is root's home unless \fBXDG_CONFIG_HOME\fR is passed through.
+.TP
+.I /var/run/docker.sock
+The Docker daemon socket.
+.TP
+.IR /proc/PID/stat ", " /proc/PID/status ", " /proc/PID/cmdline ", " /proc/PID/cgroup
+Process figures for the process view. See
+.BR proc (5).
+.SH EXIT STATUS
+0 on a normal quit, 1 if the daemon cannot be reached or the terminal cannot
+be initialised, 2 on a bad option.
+.SH NOTES
+Statistics for every running container are requested in parallel on each
+refresh. With hundreds of containers a longer interval (\fB\-d 5\fR) eases
+the load on the daemon.
+.PP
+Block I/O counts every device the kernel charges, so I/O through RAID or
+device\-mapper may be counted on each layer, as in
+.BR "docker stats" .
+.SH SEE ALSO
+.BR htop (1),
+.BR docker (1),
+.BR docker\-stats (1),
+.BR docker\-top (1),
+.BR swaptop (1),
+.BR proc (5),
+.BR cgroups (7)
+.SH AUTHOR
+Andy Dixon <andy@dixon.cx>, https://www.dixon.cx
+.SH BUGS
+Report at https://github.com/andydixon/dockertop/issues
